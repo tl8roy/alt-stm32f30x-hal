@@ -24,8 +24,8 @@ version = "0.11.0"
 
 [dependencies.hal]
 features = ["unproven"]
-version = "0.2.3"
 package = "embedded-hal"
+path = "../embedded-hal"
 
 [dependencies.void]
 default-features = false
