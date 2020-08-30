@@ -235,7 +235,7 @@ macro_rules! serial {
         impl serial::Read<u8> for Rx<$USARTX> {
             type Error = Error;
 
-            fn read(&mut self) -> nb::Result<u8, Error> {
+            fn try_read(&mut self) -> nb::Result<u8, Error> {
                 // NOTE(unsafe) atomic read with no side effects
                 let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
@@ -270,7 +270,7 @@ macro_rules! serial {
             // mode); neither of these apply to our hardware configuration
             type Error = Void;
 
-            fn flush(&mut self) -> nb::Result<(), Void> {
+            fn try_flush(&mut self) -> nb::Result<(), Void> {
                 // NOTE(unsafe) atomic read with no side effects
                 let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
@@ -281,7 +281,7 @@ macro_rules! serial {
                 }
             }
 
-            fn write(&mut self, byte: u8) -> nb::Result<(), Void> {
+            fn try_write(&mut self, byte: u8) -> nb::Result<(), Void> {
                 // NOTE(unsafe) atomic read with no side effects
                 let isr = unsafe { (*$USARTX::ptr()).isr.read() };
 
@@ -310,7 +310,7 @@ macro_rules! serial {
                         Err(_) => {},
                     }
                 }
-                match self.flush() {
+                match self.try_flush() {
                     Ok(_) => {},
                     Err(_) => {},
                 };
@@ -318,7 +318,7 @@ macro_rules! serial {
             }
 
             fn write_char(&mut self, s: char) -> core::fmt::Result {
-                match nb::block!(self.write(s as u8)) {
+                match nb::block!(self.try_write(s as u8)) {
                     Ok(_) => {},
                     Err(_) => {},
                 }

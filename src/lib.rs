@@ -25,8 +25,8 @@
 //!
 //! [`proving-ground`]: https://github.com/copterust/proving-ground
 
-#![deny(missing_docs)]
-#![deny(warnings)]
+//#![deny(missing_docs)]
+//#![deny(warnings)]
 #![no_std]
 
 #[cfg(feature = "stm32f301")]
@@ -55,33 +55,33 @@ pub use crate::pac as stm32;
 
 #[cfg(feature = "device-selected")]
 pub mod bb;
-#[cfg(feature = "device-selected")]
-pub mod delay;
+//#[cfg(feature = "device-selected")]
+//pub mod delay;
 #[cfg(feature = "device-selected")]
 pub mod dma;
-#[cfg(feature = "device-selected")]
-pub mod exti;
+//#[cfg(feature = "device-selected")]
+//pub mod exti;
 #[cfg(feature = "device-selected")]
 pub mod flash;
-#[cfg(feature = "device-selected")]
-pub mod gpio;
-#[cfg(feature = "device-selected")]
-pub mod i2c;
-#[cfg(feature = "device-selected")]
-pub mod prelude;
-#[cfg(feature = "device-selected")]
-pub mod pwm;
+//#[cfg(feature = "device-selected")]
+//pub mod gpio;
+//#[cfg(feature = "device-selected")]
+//pub mod i2c;
+//#[cfg(feature = "device-selected")]
+//pub mod prelude;
+//#[cfg(feature = "device-selected")]
+//pub mod pwm;
 #[cfg(feature = "device-selected")]
 pub mod rcc;
-#[cfg(feature = "device-selected")]
-pub mod serial;
-#[cfg(feature = "device-selected")]
-pub mod spi;
+//#[cfg(feature = "device-selected")]
+//pub mod serial;
+//#[cfg(feature = "device-selected")]
+//pub mod spi;
 #[cfg(feature = "device-selected")]
 pub mod storage;
 #[cfg(feature = "device-selected")]
 pub mod syscfg;
 #[cfg(feature = "device-selected")]
 pub mod time;
-#[cfg(feature = "device-selected")]
-pub mod timer;
+//#[cfg(feature = "device-selected")]
+//pub mod timer;

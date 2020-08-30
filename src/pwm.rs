@@ -17,27 +17,27 @@ impl<P: gpio::GPIOPin, C: timer::TimerChannel> PwmBinding<P, C> {
     }
 }
 
-impl<P: gpio::GPIOPin, C: timer::TimerChannel> hal::PwmPin
+impl<P: gpio::GPIOPin, C: timer::TimerChannel> hal::pwm::PwmPin
     for PwmBinding<P, C>
 {
     type Duty = u32;
-    fn disable(&mut self) {
+    fn try_disable(&mut self) {
         self.channel.disable()
     }
 
-    fn enable(&mut self) {
+    fn try_enable(&mut self) {
         self.channel.enable()
     }
 
-    fn get_duty(&self) -> u32 {
+    fn try_get_duty(&self) -> u32 {
         self.channel.read_ccr()
     }
 
-    fn get_max_duty(&self) -> u32 {
+    fn try_get_max_duty(&self) -> u32 {
         self.channel.read_arr()
     }
 
-    fn set_duty(&mut self, duty: u32) {
+    fn try_set_duty(&mut self, duty: u32) {
         self.channel.write_ccr(duty)
     }
 }
@@ -50,7 +50,7 @@ pub trait PwmExt<SP: gpio::OutputSpeed,
     /// type
     type OutputPin: gpio::GPIOPin;
     /// binding
-    type Output: hal::PwmPin;
+    type Output: hal::pwm::PwmPin;
     /// Configures pin and channel to create pwm binding
     fn to_pwm(self, channel: C, sp: SP) -> Self::Output;
 }

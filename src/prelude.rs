@@ -28,14 +28,13 @@ pub use hal::blocking::spi::{
     Transfer as _embedded_hal_blocking_spi_Transfer,
     Write as _embedded_hal_blocking_spi_Write,
 };
-pub use hal::digital::v2::InputPin as _embedded_hal_digital_InputPin;
-pub use hal::digital::v2::OutputPin as _embedded_hal_digital_OutputPin;
-pub use hal::digital::v2::StatefulOutputPin as _embedded_hal_digital_StatefulOutputPin;
-pub use hal::digital::v2::ToggleableOutputPin as _embedded_hal_digital_ToggleableOutputPin;
-pub use hal::digital::v2_compat::*;
+pub use hal::digital::InputPin as _embedded_hal_digital_InputPin;
+pub use hal::digital::OutputPin as _embedded_hal_digital_OutputPin;
+pub use hal::digital::StatefulOutputPin as _embedded_hal_digital_StatefulOutputPin;
+pub use hal::digital::ToggleableOutputPin as _embedded_hal_digital_ToggleableOutputPin;
 pub use hal::serial::Read as _embedded_hal_serial_Read;
 pub use hal::serial::Write as _embedded_hal_serial_Write;
 pub use hal::spi::FullDuplex as _embedded_hal_spi_FullDuplex;
 pub use hal::timer::CountDown as _embedded_hal_timer_CountDown;
-pub use hal::Pwm as _embedded_hal_Pwm;
-pub use hal::PwmPin as _embedded_hal_PwmPin;
+pub use hal::pwm as _embedded_hal_Pwm;
+pub use hal::pwm::PwmPin as _embedded_hal_PwmPin;

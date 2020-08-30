@@ -1,7 +1,9 @@
 //! Storage 
 
-use hal::storage::{SingleWrite,SingleRead,MultiRead,MultiWrite,Address};
-use crate::pac::{flash, FLASH};
+use hal::storage::*;
+use crate::pac::{FLASH};
+use nb;
+use cortex_m::asm;
 
 enum WriteMode {
     EraseStart,
@@ -15,31 +17,33 @@ pub struct Flash {
     write_mode: Option<WriteMode>
 }
 
-pub impl SingleWrite<u16,u32> for Flash 
+pub enum FlashError {}
+
+impl SingleWrite<u16,u32> for Flash 
 {
-    type Error = Error<E>;
-    fn try_read(&mut self, address: Address<u32>, word: u16) -> nb::Result<(), Self::Error> {
-        let mut buf: [u16] = [word]; 
-        self.try_write_slice(address,&buf);
-        Ok()
+    type Error = FlashError;
+    fn try_write(&mut self, address: Address<u32>, word: u16) -> nb::Result<(), Self::Error> {
+        let mut buf = [word]; 
+        self.try_write_slice(address,&mut buf)?;
+        Ok(())
     }
 }
 
-pub impl MultiWrite<u16,u32> for Flash
+impl MultiWrite<u16,u32> for Flash
 {
-    type Error = Error<E>;
-    fn try_write_slice(&mut self, address: Address<u32>, buf: &[u16]) -> nb::Result<(), Self::Error> {
+    type Error = FlashError;
+    fn try_write_slice(&mut self, address: Address<u32>, buf: &mut [u16]) -> nb::Result<(), Self::Error> {
         use WriteMode::*;
         match self.write_mode {
             Some(EraseStart) | Some(EraseEnd) => {
                 self.try_erase_address(address)?;
                 self.write_mode = Some(WriteStart);
                 
-                Error::WouldBlock
+                Err(nb::Error::WouldBlock)
             },
             Some(WriteStart) => {
                 if self.flash.sr.read().bsy().bit_is_set() {
-                    return Error::WouldBlock;
+                    return Err(nb::Error::WouldBlock);
                 }
                 unsafe {
                     self.flash.keyr.write(|w| {
@@ -54,27 +58,30 @@ pub impl MultiWrite<u16,u32> for Flash
                     });
                 }
                 
-                let mut start_address = address.0;
+                let mut start_address = address.0 as *mut _;
                 
                 for item in buf {
                     unsafe {
-                        * start_address = item;
+                        use core::ptr;
+                        ptr::write_volatile(start_address, *item);
+
+                        //16 bit word, but 8 byte addressing
+                        start_address = start_address.offset(2);
                     }
-                    //16 bit word, but 8 byte addressing
-                    start_address += 2;
+                    
                 }
                 
                 
                 asm::nop();
                 self.write_mode = Some(WriteEnd);
-                Error::WouldBlock
+                Err(nb::Error::WouldBlock)
             },
             Some(WriteEnd) => {
                 if self.flash.sr.read().bsy().bit_is_set() {
-                    return Error::WouldBlock;
+                    return Err(nb::Error::WouldBlock);
                 }
                     
-                unsafe {
+                //unsafe {
         
                     self.flash.sr.write(|w| {
                         w.eop().clear_bit()
@@ -85,27 +92,30 @@ pub impl MultiWrite<u16,u32> for Flash
                         w.lock().set_bit()
                     });
         
-                }
+                //}
                 self.write_mode = None;
+                Ok(())
             },
-            None => Ok()
+            None => Ok(())
         }
 
     }
 }
 
 
-pub impl ErasePage<u32> for Flash 
+impl ErasePage<u32> for Flash 
 {
+    type Error = FlashError;
     fn try_erase_page(&mut self, page: Page<u32>) -> nb::Result<(), Self::Error> {
         //convert the page ID to an address
-        let address = page.0*self.try_page_size()?+self.try_start_address()?;
+        let address = page.0*self.try_page_size(Address(0))?.0+self.try_start_address()?.0;
         let address = Address(address);
 
         self.try_erase_address(address)
     }
 
     fn try_erase_address(&mut self, address: Address<u32>) -> nb::Result<(), Self::Error> {
+        use WriteMode::*;
         match self.write_mode {
             Some(EraseStart) => {
                 unsafe {
@@ -134,29 +144,29 @@ pub impl ErasePage<u32> for Flash
                     asm::nop();
                 }
                 self.write_mode = Some(EraseEnd);
-                Error::WouldBlock
+                Err(nb::Error::WouldBlock)
             },
             Some(EraseEnd) => {
                 if self.flash.sr.read().bsy().bit_is_set() {
-                    return Error::WouldBlock;
+                    return Err(nb::Error::WouldBlock);
                 }
                 
                 if self.flash.sr.read().eop().bit_is_set() {
-                    unsafe {
-                        self.flash.sr.write(|w| {
-                            w.eop().clear_bit()
-                        });
-            
-                        self.flash.cr.write(|w| {
-                            w.per().clear_bit()
-                        });
-                    }
-                }
-                unsafe {
+
+                    self.flash.sr.write(|w| {
+                        w.eop().clear_bit()
+                    });
+        
                     self.flash.cr.write(|w| {
-                            w.lock().set_bit()
-                        });
+                        w.per().clear_bit()
+                    });
+                    
                 }
+
+                self.flash.cr.write(|w| {
+                        w.lock().set_bit()
+                    });
+        
         
                 self.write_mode = None;
                 Ok(())
@@ -170,31 +180,33 @@ pub impl ErasePage<u32> for Flash
 
 }
 
-pub impl SingleRead<u8,u32> for Flash 
+impl SingleRead<u8,u32> for Flash 
 {
-    type Error = Error<E>;
+    type Error = FlashError;
     fn try_read(&mut self, address: Address<u32>) -> nb::Result<u8, Self::Error> {
-        let mut buf: [u8] = [0]; 
-        self.try_read_slice(address.0,&buf);
+        let mut buf = [0]; 
+        self.try_read_slice(address,&mut buf)?;
         Ok(buf[0])
     }
 }
 
-pub impl MultiRead<u8,u32> for Flash
+#[allow(unused_assignments)]
+impl MultiRead<u8,u32> for Flash
 {
-    type Error = Error<E>;
-    fn try_read_slice(&mut self, address: Address<u32>,  buf: &mut [u8]) -> nb::Result<(), Self::Error> {
-        let address = address.0 as *const _;
+    type Error = FlashError;
+    fn try_read_slice(&mut self, address: Address<u32>, mut buf: &mut [u8]) -> nb::Result<(), Self::Error> {
+        let address = address.0 as *mut _;
         unsafe {
-             buf = core::slice::from_raw_parts::<'static, u8>(address,buf.len())
+            
+            buf = core::slice::from_raw_parts_mut::<'static, u8>(address,buf.len());
         }
         
-        Ok() 
+        Ok(()) 
     }
 }
 
-pub impl StorageSize<u8, u32> for Flash {
-    type Error = Error<E>;
+impl StorageSize<u8, u32> for Flash {
+    type Error = FlashError;
 
     fn try_start_address(&mut self) -> nb::Result<Address<u32>, Self::Error> {
         Ok(Address(0x0800_0000))
@@ -205,7 +217,7 @@ pub impl StorageSize<u8, u32> for Flash {
     }
 
     /// 2KB
-    fn try_page_size(&mut self) -> nb::Result<AddressOffset<u32>, Self::Error> {
+    fn try_page_size(&mut self, _address: Address<u32>) -> nb::Result<AddressOffset<u32>, Self::Error> {
         Ok(AddressOffset(2048))
     }
 }

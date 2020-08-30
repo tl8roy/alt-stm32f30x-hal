@@ -28,25 +28,25 @@ impl Delay {
 }
 
 impl DelayMs<u32> for Delay {
-    fn delay_ms(&mut self, ms: u32) {
-        self.delay_us(ms * 1_000);
+    fn try_delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+        Ok(self.delay_us(ms * 1_000))
     }
 }
 
 impl DelayMs<u16> for Delay {
-    fn delay_ms(&mut self, ms: u16) {
-        self.delay_ms(u32(ms));
+    fn try_delay_ms(&mut self, ms: u16) -> Result<(), Self::Error> {
+        Ok(self.delay_ms(u32(ms)))
     }
 }
 
 impl DelayMs<u8> for Delay {
-    fn delay_ms(&mut self, ms: u8) {
-        self.delay_ms(u32(ms));
+    fn try_delay_ms(&mut self, ms: u8) -> Result<(), Self::Error> {
+        Ok(self.delay_ms(u32(ms)))
     }
 }
 
 impl DelayUs<u32> for Delay {
-    fn delay_us(&mut self, us: u32) {
+    fn try_delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
         let rvr = us * (self.clocks.sysclk().0 / 1_000_000);
 
         assert!(rvr < (1 << 24));
@@ -57,18 +57,18 @@ impl DelayUs<u32> for Delay {
 
         while !self.syst.has_wrapped() {}
 
-        self.syst.disable_counter();
+        Ok(self.syst.disable_counter())
     }
 }
 
 impl DelayUs<u16> for Delay {
-    fn delay_us(&mut self, us: u16) {
-        self.delay_us(u32(us))
+    fn try_delay_us(&mut self, us: u16) -> Result<(), Self::Error> {
+        Ok(self.delay_us(u32(us)))
     }
 }
 
 impl DelayUs<u8> for Delay {
-    fn delay_us(&mut self, us: u8) {
-        self.delay_us(u32(us))
+    fn try_delay_us(&mut self, us: u8) -> Result<(), Self::Error> {
+        Ok(self.delay_us(u32(us)))
     }
 }

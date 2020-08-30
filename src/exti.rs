@@ -95,7 +95,7 @@ impl<E: ExternalInterrupt> Exti<E> {
     /// Bind interrupt to input pin. Returns bound interrput that can be used to
     /// unpend.
     pub fn bind<GP>(self, pin: GP, syscfg: &mut Syscfg) -> BoundInterrupt<GP, E>
-        where GP: gpio::GPIOPin + hal::digital::v2::InputPin
+        where GP: gpio::GPIOPin + hal::digital::InputPin
     {
         let exti = unsafe { &(*EXTI::ptr()) };
 

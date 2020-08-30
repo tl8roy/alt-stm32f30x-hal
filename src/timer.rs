@@ -97,18 +97,18 @@ pub mod syst {
     impl CountDown for Timer {
         type Time = Hertz<u32>;
 
-        fn start<T>(&mut self, timeout: T)
+        fn try_start<T>(&mut self, timeout: T) -> Result<(), Self::Error> 
             where T: Into<Self::Time>
         {
             self.reset(timeout);
             self.tim.enable_counter();
         }
 
-        fn wait(&mut self) -> nb::Result<(), Void> {
+        fn try_wait(&mut self) -> Result<(), Self::Error>  {
             if self.tim.has_wrapped() {
                 Ok(())
             } else {
-                Err(nb::Error::WouldBlock)
+                Err(nb::Error::WouldBlock.into())
             }
         }
     }
@@ -470,14 +470,14 @@ macro_rules! tim {
             impl<PS: PwmState> CountDown for Timer<PS> {
                 type Time = Hertz<u32>;
 
-                fn start<T>(&mut self, timeout: T)
+                fn try_start<T>(&mut self, timeout: T) -> Result<(), Self::Error> 
                     where T: Into<Hertz<u32>>
                 {
                     self.reset(timeout);
                     self.enable();
                 }
 
-                fn wait(&mut self) -> nb::Result<(), Void> {
+                fn try_wait(&mut self) -> Result<(), Self::Error>  {
                     if self.tim.sr.read().uif().bit_is_clear() {
                         Err(nb::Error::WouldBlock)
                     } else {
